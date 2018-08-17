@@ -1,105 +1,77 @@
-import os
-
 import pandas as pd
-import numpy as np
 
-import sqlalchemy
-from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
+from flask import (
+   Flask,
+   render_template,
+   jsonify)
 
-from flask import Flask, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 
-
+#################################################
+# Flask Setup
+#################################################
 app = Flask(__name__)
-
 
 #################################################
 # Database Setup
 #################################################
 
-#app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///bellybutton.sqlite"
-#app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///titanic.sqlite"
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///FPA_FOD_20170508.sqlite"
+# The database URI
+#app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///db/emoji.sqlite"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db/FPA_FOD_20170508.sqlite"
+
 db = SQLAlchemy(app)
 
-# reflect an existing database into a new model
-Base = automap_base()
-# reflect the tables
-Base.prepare(db.engine, reflect=True)
 
-# Save references to each table
-Fires = Base.classes.fires
-#Samples = Base.classes.samples
+class Fires(db.Model):
+   __tablename__ = 'fires'
+
+   id = db.Column(db.Integer, primary_key=True)
+   LATITUDE = db.Column(db.Integer)
+   LONGITUDE = db.Column(db.Integer)
+   FIRE_YEAR = db.Column(db.Integer)
+   STAT_CAUSE_CODE = db.Column(db.String)
+   STATE = db.Column(db.String)
+   FIRE_SIZE = db.Column(db.Integer)
+   FIRE_SIZE_CLASS = db.Column(db.String)
+
+   def __repr__(self):
+       return '<Fires %r>' % (self.name)
+
+# Create database tables
+@app.before_first_request
+def setup():
+   # Recreate database each time for demo
+   # db.drop_all()
+   db.create_all()
+
+#################################################
+# Flask Routes
+#################################################
 
 
 @app.route("/")
-def index():
-   db.session.query(Fires).limit(10).all()
-    #df = pd.read_sql_query(stmt, db.session.bind)
-    return render_template("index.html")
+def home():
+   """Render Home Page."""
+   return render_template("index.html")
 
 
-# @app.route("/names")
-# def names():
-#     """Return a list of sample names."""
+@app.route("/firedata")
+def firedata():
+   results = db.session.query(Fires.LATITUDE, Fires.LONGITUDE, Fires.STATE, Fires.FIRE_YEAR, Fires.STAT_CAUSE_CODE, Fires.FIRE_SIZE).all()
 
-#     # Use Pandas to perform the sql query
-#     stmt = db.session.query(Samples).statement
-#     df = pd.read_sql_query(stmt, db.session.bind)
-
-#     # Return a list of the column names (sample names)
-#     return jsonify(list(df.columns)[2:])
-
-
-# @app.route("/metadata/<sample>")
-# def sample_metadata(sample):
-#     """Return the MetaData for a given sample."""
-#     sel = [
-#         Samples_Metadata.sample,
-#         Samples_Metadata.ETHNICITY,
-#         Samples_Metadata.GENDER,
-#         Samples_Metadata.AGE,
-#         Samples_Metadata.LOCATION,
-#         Samples_Metadata.BBTYPE,
-#         Samples_Metadata.WFREQ,
-#     ]
-
-#     results = db.session.query(*sel).filter(Samples_Metadata.sample == sample).all()
-
-#     # Create a dictionary entry for each row of metadata information
-#     sample_metadata = {}
-#     for result in results:
-#         sample_metadata["sample"] = result[0]
-#         sample_metadata["ETHNICITY"] = result[1]
-#         sample_metadata["GENDER"] = result[2]
-#         sample_metadata["AGE"] = result[3]
-#         sample_metadata["LOCATION"] = result[4]
-#         sample_metadata["BBTYPE"] = result[5]
-#         sample_metadata["WFREQ"] = result[6]
-
-#     print(sample_metadata)
-#     return jsonify(sample_metadata)
+   firedata = []
+   for result in results:
+       firedata.append({
+           "LAT": result[0],
+           "LON": result[1],
+           "State": result[2],
+           "Year": result[3],
+           "Cause": result[4],
+           "Size": result[5]
+       })
+   return jsonify(firedata)
 
 
-# @app.route("/samples/<sample>")
-# def samples(sample):
-#     """Return `otu_ids`, `otu_labels`,and `sample_values`."""
-#     stmt = db.session.query(Samples).statement
-#     df = pd.read_sql_query(stmt, db.session.bind)
-
-#     # Filter the data based on the sample number and
-#     # only keep rows with values above 1
-#     sample_data = df.loc[df[sample] > 1, ["otu_id", "otu_label", sample]]
-#     # Format the data to send as json
-#     data = {
-#         "otu_ids": sample_data.otu_id.values.tolist(),
-#         "sample_values": sample_data[sample].values.tolist(),
-#         "otu_labels": sample_data.otu_label.tolist(),
-#     }
-#     return jsonify(data)
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
+if __name__ == '__main__':
+   app.run(debug=True)
