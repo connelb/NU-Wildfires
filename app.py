@@ -20,6 +20,7 @@ app = Flask(__name__)
 #################################################
 
 #app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///bellybutton.sqlite"
+#app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///titanic.sqlite"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///FPA_FOD_20170508.sqlite"
 db = SQLAlchemy(app)
 
@@ -29,13 +30,14 @@ Base = automap_base()
 Base.prepare(db.engine, reflect=True)
 
 # Save references to each table
-Samples_Metadata = Base.classes.sample_metadata
-Samples = Base.classes.samples
+Fires = Base.classes.fires
+#Samples = Base.classes.samples
 
 
 @app.route("/")
 def index():
-    """Return the homepage."""
+   db.session.query(Fires).limit(10).all()
+    #df = pd.read_sql_query(stmt, db.session.bind)
     return render_template("index.html")
 
 
@@ -100,4 +102,4 @@ def index():
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
