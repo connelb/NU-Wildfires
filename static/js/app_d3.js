@@ -1,4 +1,7 @@
 
+// forked from Mike Bostock ///
+//https://www2.census.gov/geo/docs/reference/codes/national_county.txt
+
 var svg = d3.select("svg"),
     width = +svg.attr("width"),
     height = +svg.attr("height");
@@ -49,26 +52,43 @@ g.call(d3.axisBottom(x)
     .remove();
 
 d3.queue()
-    .defer(d3.json, "https://d3js.org/us-10m.v1.json")
-    .defer(d3.csv, "unemployment.csv", function(d) { unemployment.set(d.id, +d.rate); })
+    //.defer(d3.json, "https://d3js.org/us-10m.v1.json")
+    .defer(d3.json, "map.json")
+    .defer(d3.json,"/firedata")
+    //.defer(d3.csv, "unemployment.csv", function(d) { unemployment.set(d.id, +d.rate); })
+    //.defer(d3.csv, "unemployment.csv", function(d) { unemployment.set(d.id, +d.FIRE_SIZE); })
     .await(ready);
 
 function ready(error, us) {
     console.log('test',us);
+    //FIRE_YEAR === '2015'
   if (error) throw error;
 
-  svg.append("g")
-      .attr("class", "counties")
+//   svg.append("g")
+//       .attr("class", "counties")
+//     .selectAll("path")
+//     .data(topojson.feature(us, us.objects.counties).features)
+//     .enter().append("path")
+//       .attr("fill", function(d) { return color(d.rate = unemployment.get(d.id)); })
+//       .attr("d", path)
+//     .append("title")
+//       .text(function(d) { return d.rate + "%"; });
+
+//   svg.append("path")
+//       .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
+//       .attr("class", "states")
+//       .attr("d", path);
+
+
+      svg.append("g")
+      .attr("class", "states")
     .selectAll("path")
-    .data(topojson.feature(us, us.objects.counties).features)
+    .data(topojson.feature(us, us.objects.states).features)
     .enter().append("path")
-      .attr("fill", function(d) { return color(d.rate = unemployment.get(d.id)); })
-      .attr("d", path)
-    .append("title")
-      .text(function(d) { return d.rate + "%"; });
+    .attr("fill", function(d) { return color(d.rate = unemployment.get(d.id)); })
+      .attr("d", path);
 
   svg.append("path")
-      .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
-      .attr("class", "states")
-      .attr("d", path);
+      .attr("class", "state-borders")
+      .attr("d", path(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; })));
 }

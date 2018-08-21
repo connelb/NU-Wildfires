@@ -1,5 +1,13 @@
 import pandas as pd
 
+import sqlalchemy
+from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
+
+#from flask import Flask, jsonify, render_template
+#from flask_sqlalchemy import SQLAlchemy
+
 from flask import (
    Flask,
    render_template,
@@ -34,6 +42,7 @@ class Fires(db.Model):
    STATE = db.Column(db.String)
    FIRE_SIZE = db.Column(db.Integer)
    FIRE_SIZE_CLASS = db.Column(db.String)
+   FIPS_CODE = db.Column(db.String)
 
    def __repr__(self):
        return '<Fires %r>' % (self.name)
@@ -58,20 +67,21 @@ def home():
 
 @app.route("/firedata")
 def firedata():
-   results = db.session.query(Fires.LATITUDE, Fires.LONGITUDE, Fires.STATE, Fires.FIRE_YEAR, Fires.STAT_CAUSE_CODE, Fires.FIRE_SIZE).all()
-
+   results = db.session.query(Fires.LATITUDE, Fires.LONGITUDE, Fires.STATE,Fires.FIRE_YEAR, Fires.STAT_CAUSE_CODE, Fires.FIRE_SIZE, Fires.FIPS_CODE).filter(Fires.FIRE_YEAR==2013).all()
    firedata = []
    for result in results:
-       firedata.append({
-           "LAT": result[0],
-           "LON": result[1],
-           "State": result[2],
-           "Year": result[3],
-           "Cause": result[4],
-           "Size": result[5]
-       })
+        firedata.append({
+            "LAT": result[0],
+            "LON": result[1],
+            "State": result[2],
+            "Year": result[3],
+            "Cause": result[4],
+            "Size": result[5],
+            "FIPS": result[6]
+            })
    return jsonify(firedata)
 
 
+
 if __name__ == '__main__':
-   app.run(debug=True)
+   app.run()
